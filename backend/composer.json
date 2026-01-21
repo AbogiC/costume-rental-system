@@ -1,0 +1,17 @@
+{
+  "name": "costume-rental/backend",
+  "require": {
+    "php": "8.5.1"
+  },
+  "autoload": {
+    "psr-4": {
+      "CostumeRental\\": "models/"
+    }
+  },
+  "authors": [
+    {
+      "name": "AbogiC",
+      "email": "venturaabedbogichrist314@gmail.com"
+    }
+  ]
+}
