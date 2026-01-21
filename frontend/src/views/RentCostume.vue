@@ -61,33 +61,10 @@
           </div>
 
           <form @submit.prevent="submitRental" class="space-y-4">
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">Your Name *</label>
-              <input
-                type="text"
-                v-model="rentalForm.renter_name"
-                required
-                class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            </div>
-
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">Email *</label>
-              <input
-                type="email"
-                v-model="rentalForm.renter_email"
-                required
-                class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            </div>
-
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">Phone</label>
-              <input
-                type="tel"
-                v-model="rentalForm.renter_phone"
-                class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
+            <div class="bg-blue-50 p-4 rounded-lg mb-4">
+              <p class="text-sm text-blue-800">
+                <strong>Renting as:</strong> {{ authStore.user.name }} ({{ authStore.user.email }})
+              </p>
             </div>
 
             <div class="grid grid-cols-2 gap-4">
@@ -150,15 +127,14 @@
 import { ref, computed, onMounted } from 'vue'
 import { useCostumeStore } from '@/stores/costumeStore'
 import { rentalService } from '@/services/api'
+import { useAuthStore } from '@/stores/authStore'
 
 const costumeStore = useCostumeStore()
+const authStore = useAuthStore()
 const selectedCostume = ref(null)
 const submitting = ref(false)
 
 const rentalForm = ref({
-  renter_name: '',
-  renter_email: '',
-  renter_phone: '',
   rental_date: '',
   return_date: '',
 })
@@ -199,6 +175,7 @@ const submitRental = async () => {
   submitting.value = true
   try {
     const rentalData = {
+      user_id: authStore.user.id,
       costume_id: selectedCostume.value.id,
       ...rentalForm.value,
       total_price: totalPrice.value,
@@ -210,9 +187,6 @@ const submitRental = async () => {
 
     // Reset form
     rentalForm.value = {
-      renter_name: '',
-      renter_email: '',
-      renter_phone: '',
       rental_date: '',
       return_date: '',
     }

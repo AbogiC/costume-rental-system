@@ -13,6 +13,11 @@ $costumeModel = new \CostumeRental\Costume($db);
 
 $method = $_SERVER['REQUEST_METHOD'];
 
+if ($method === 'OPTIONS') {
+    http_response_code(200);
+    exit;
+}
+
 switch ($method) {
     case 'GET':
         if (isset($_GET['id'])) {

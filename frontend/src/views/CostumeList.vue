@@ -3,6 +3,7 @@
     <div class="flex justify-between items-center mb-6">
       <h1 class="text-3xl font-bold">Costume Catalogue</h1>
       <router-link
+        v-if="authStore.isAdmin"
         to="/costumes/new"
         class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition duration-300"
       >
@@ -46,9 +47,11 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useCostumeStore } from '@/stores/costumeStore'
+import { useAuthStore } from '@/stores/authStore'
 import CostumeCard from '@/components/CostumeCard.vue'
 
 const costumeStore = useCostumeStore()
+const authStore = useAuthStore()
 const searchQuery = ref('')
 
 const loading = computed(() => costumeStore.loading)

@@ -30,14 +30,16 @@
 
       <div class="flex justify-between space-x-2">
         <router-link
+          v-if="authStore.isAdmin"
           :to="`/costumes/edit/${costume.id}`"
-          class="flex-1 bg-blue-100 text-blue-600 text-center py-2 rounded hover:bg-blue-200 transition duration-300"
+          class="bg-blue-100 text-blue-600 text-center py-2 px-4 rounded hover:bg-blue-200 transition duration-300"
         >
           Edit
         </router-link>
         <button
+          v-if="authStore.isAdmin"
           @click="$emit('delete', costume.id)"
-          class="flex-1 bg-red-100 text-red-600 py-2 rounded hover:bg-red-200 transition duration-300"
+          class="bg-red-100 text-red-600 py-2 px-4 rounded hover:bg-red-200 transition duration-300"
         >
           Delete
         </button>
@@ -45,10 +47,11 @@
           :to="{ name: 'rent', query: { costumeId: costume.id } }"
           :disabled="costume.quantity_available === 0"
           :class="[
-            'flex-1 text-center py-2 rounded transition duration-300',
+            'text-center py-2 px-4 rounded transition duration-300',
             costume.quantity_available > 0
               ? 'bg-green-100 text-green-600 hover:bg-green-200'
               : 'bg-gray-100 text-gray-400 cursor-not-allowed',
+            authStore.isAdmin ? 'flex-1' : 'flex-1',
           ]"
         >
           Rent
@@ -59,6 +62,10 @@
 </template>
 
 <script setup>
+import { useAuthStore } from '@/stores/authStore'
+
+const authStore = useAuthStore()
+
 defineProps({
   costume: {
     type: Object,

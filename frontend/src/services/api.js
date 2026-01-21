@@ -48,4 +48,16 @@ export const rentalService = {
   },
 }
 
+export const authService = {
+  async login(credentials) {
+    const response = await api.post('/auth.php', { action: 'login', ...credentials })
+    return response.data
+  },
+
+  async register(userData) {
+    const response = await api.post('/auth.php', { action: 'register', ...userData })
+    return response.data
+  },
+}
+
 export default api

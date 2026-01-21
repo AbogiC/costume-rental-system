@@ -11,18 +11,25 @@ $db = $database->getConnection();
 
 $method = $_SERVER['REQUEST_METHOD'];
 
+if ($method === 'OPTIONS') {
+    http_response_code(200);
+    exit;
+}
+
 switch ($method) {
     case 'GET':
-        $query = "SELECT r.*, c.name as costume_name FROM rentals r 
-                  JOIN costumes c ON r.costume_id = c.id 
+        $query = "SELECT r.*, c.name as costume_name, u.name as user_name, u.email as user_email
+                  FROM rentals r
+                  JOIN costumes c ON r.costume_id = c.id
+                  JOIN users u ON r.user_id = u.id
                   ORDER BY r.created_at DESC";
         $result = $db->query($query);
-        
+
         $rentals = [];
         while ($row = $result->fetch_assoc()) {
             $rentals[] = $row;
         }
-        
+
         echo json_encode($rentals);
         break;
         
@@ -30,7 +37,7 @@ switch ($method) {
         $data = json_decode(file_get_contents("php://input"), true);
         
         // Validate required fields
-        $required = ['costume_id', 'renter_name', 'renter_email', 'rental_date', 'return_date'];
+        $required = ['user_id', 'costume_id', 'rental_date', 'return_date'];
         foreach ($required as $field) {
             if (empty($data[$field])) {
                 http_response_code(400);
@@ -62,17 +69,14 @@ switch ($method) {
             
             // Create rental
             $stmt = $db->prepare(
-                "INSERT INTO rentals (costume_id, renter_name, renter_email, renter_phone, 
-                                      rental_date, return_date, total_price, status) 
-                 VALUES (?, ?, ?, ?, ?, ?, ?, 'pending')"
+                "INSERT INTO rentals (user_id, costume_id, rental_date, return_date, total_price, status)
+                 VALUES (?, ?, ?, ?, ?, 'pending')"
             );
-            
+
             $stmt->bind_param(
-                "isssssd",
+                "iissd",
+                $data['user_id'],
                 $data['costume_id'],
-                $data['renter_name'],
-                $data['renter_email'],
-                $data['renter_phone'] ?? null,
                 $data['rental_date'],
                 $data['return_date'],
                 $total_price
