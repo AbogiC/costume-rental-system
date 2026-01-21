@@ -46,6 +46,15 @@ export const rentalService = {
     const response = await api.get('/rentals.php')
     return response.data
   },
+
+  async updateRentalStatus(rentalId, status) {
+    const response = await api.post('/rentals.php', {
+      action: 'update_status',
+      id: rentalId,
+      status: status,
+    })
+    return response.data
+  },
 }
 
 export const authService = {

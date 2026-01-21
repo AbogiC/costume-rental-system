@@ -25,13 +25,27 @@
                   </p>
                   <p class="text-sm text-gray-500">Total: ${{ rental.total_price }}</p>
                 </div>
-                <div class="ml-4">
+                <div class="ml-4 flex items-center space-x-2">
                   <span
                     :class="getStatusClass(rental.status)"
                     class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
                   >
                     {{ rental.status }}
                   </span>
+                  <div v-if="rental.status === 'pending'" class="flex space-x-1">
+                    <button
+                      @click="updateStatus(rental.id, 'active')"
+                      class="bg-green-500 text-white px-2 py-1 rounded text-xs hover:bg-green-600"
+                    >
+                      Approve
+                    </button>
+                    <button
+                      @click="updateStatus(rental.id, 'cancelled')"
+                      class="bg-red-500 text-white px-2 py-1 rounded text-xs hover:bg-red-600"
+                    >
+                      Reject
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -75,6 +89,17 @@ const fetchRentals = async () => {
     console.error('Failed to fetch rentals:', error)
   } finally {
     loading.value = false
+  }
+}
+
+const updateStatus = async (rentalId, status) => {
+  try {
+    await rentalService.updateRentalStatus(rentalId, status)
+    // Refresh the rentals list
+    await fetchRentals()
+  } catch (error) {
+    console.error('Failed to update rental status:', error)
+    alert('Failed to update rental status')
   }
 }
 

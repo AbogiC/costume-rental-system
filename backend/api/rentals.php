@@ -35,8 +35,76 @@ switch ($method) {
         
     case 'POST':
         $data = json_decode(file_get_contents("php://input"), true);
-        
-        // Validate required fields
+
+        // Check if this is a status update
+        if (isset($data['action']) && $data['action'] === 'update_status') {
+            $required = ['id', 'status'];
+            foreach ($required as $field) {
+                if (empty($data[$field])) {
+                    http_response_code(400);
+                    echo json_encode(["message" => "Missing required field: $field"]);
+                    exit;
+                }
+            }
+
+            // Start transaction
+            $db->begin_transaction();
+
+            try {
+                // Get current rental and costume info
+                $stmt = $db->prepare(
+                    "SELECT r.status, r.costume_id, c.quantity_available
+                     FROM rentals r
+                     JOIN costumes c ON r.costume_id = c.id
+                     WHERE r.id = ? FOR UPDATE"
+                );
+                $stmt->bind_param("i", $data['id']);
+                $stmt->execute();
+                $result = $stmt->get_result();
+                $rental = $result->fetch_assoc();
+
+                if (!$rental) {
+                    throw new Exception("Rental not found");
+                }
+
+                // Update rental status
+                $stmt = $db->prepare("UPDATE rentals SET status = ? WHERE id = ?");
+                $stmt->bind_param("si", $data['status'], $data['id']);
+
+                if (!$stmt->execute()) {
+                    throw new Exception("Failed to update rental status");
+                }
+
+                // Update costume quantity based on status change
+                if ($rental['status'] === 'pending' && $data['status'] === 'active') {
+                    // Approve: decrement quantity
+                    if ($rental['quantity_available'] <= 0) {
+                        throw new Exception("Costume not available");
+                    }
+                    $stmt = $db->prepare("UPDATE costumes SET quantity_available = quantity_available - 1 WHERE id = ?");
+                    $stmt->bind_param("i", $rental['costume_id']);
+                } elseif ($rental['status'] === 'active' && $data['status'] === 'cancelled') {
+                    // Cancel active rental: increment quantity
+                    $stmt = $db->prepare("UPDATE costumes SET quantity_available = quantity_available + 1 WHERE id = ?");
+                    $stmt->bind_param("i", $rental['costume_id']);
+                }
+
+                if (isset($stmt) && !$stmt->execute()) {
+                    throw new Exception("Failed to update costume quantity");
+                }
+
+                $db->commit();
+                echo json_encode(["message" => "Rental status updated successfully"]);
+
+            } catch (Exception $e) {
+                $db->rollback();
+                http_response_code(500);
+                echo json_encode(["message" => "Failed to update rental status: " . $e->getMessage()]);
+            }
+            break;
+        }
+
+        // Validate required fields for new rental
         $required = ['user_id', 'costume_id', 'rental_date', 'return_date'];
         foreach ($required as $field) {
             if (empty($data[$field])) {
@@ -81,17 +149,9 @@ switch ($method) {
                 $data['return_date'],
                 $total_price
             );
-            
+
             if (!$stmt->execute()) {
                 throw new Exception("Failed to create rental");
-            }
-            
-            // Update costume quantity
-            $stmt = $db->prepare("UPDATE costumes SET quantity_available = quantity_available - 1 WHERE id = ?");
-            $stmt->bind_param("i", $data['costume_id']);
-            
-            if (!$stmt->execute()) {
-                throw new Exception("Failed to update costume quantity");
             }
             
             $db->commit();
